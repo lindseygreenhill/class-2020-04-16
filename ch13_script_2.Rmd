@@ -110,6 +110,27 @@ How many trees did the forest use? Would we get better results if we used a diff
 
 What is OOB error?
 
+```{r 3, echo=F}
+forest_mod <- rand_forest() %>%
+  set_engine("randomForest") %>%
+  set_mode("classification")
+
+vote_forest <- fit(forest_mod,
+                    factor(vote) ~ ideology +income + gender + race,
+                    data = nes)
+vote_forest
+
+tibble(`Error rate` = vote_forest$fit$err.rate[, "OOB"],
+       Trees = 1:500) %>%
+  ggplot(aes(x = Trees, y = `Error rate`)) +
+  geom_line() +
+  theme_classic()
+
+# OOB error: 25.33% - it will sample with replacement from our data and then take the average of all of those trees. The prediction error. How wrong can this be. 
+
+```
+
+
 
 
 # Scene 4
@@ -128,6 +149,26 @@ Note:
 Accuracy = (Actual 1 as 1 + Actual 0 as 0) / n
 Sensitivity = The proportion of actual 1s classified as 1
 Specificity = The proportion of actual 0s classified as 0
+
+```{r 4, echo=F}
+
+
+predictions <- nes %>%
+  mutate(modal = 1,
+         logistic = predict(logistic_fit, new_data = nes) %>% 
+           pull(.pred_class),
+         tree = predict(nes_region_tree, new_data = nes) %>% 
+           pull(.pred_class),
+         forest = predict(nes_forest, new_data = nes) %>% 
+           pull(.pred_class))
+
+tibble(modal = mean(predictions$modal == predictions$vote),
+       linear = mean(predictions$logistic == predictions$vote),
+       tree = mean(predictions$tree == predictions$vote),
+       forest = mean(predictions$forest == predictions$vote))
+
+```
+
 
 
 
